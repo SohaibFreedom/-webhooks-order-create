@@ -4,13 +4,16 @@ import bodyParser from "body-parser";
 const app = express();
 app.use(bodyParser.json());
 
+// =====================
+// ENV VARIABLES
+// =====================
 const TARGET_PRODUCT_ID = Number(process.env.TARGET_PRODUCT_ID);
-const SHOPIFY_STORE = process.env.SHOPIFY_STORE;
-const SHOPIFY_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const SHOPIFY_STORE = process.env.SHOPIFY_STORE; // e.g. yellowlabelco.myshopify.com
+const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN; // ✅ FIXED
 
-// --------------------
-// Helpers
-// --------------------
+// =====================
+// HELPERS
+// =====================
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function shopifyFetch(body) {
@@ -35,9 +38,9 @@ async function shopifyFetch(body) {
   return json;
 }
 
-// --------------------
-// Webhook
-// --------------------
+// =====================
+// WEBHOOK
+// =====================
 app.post("/order-create", async (req, res) => {
   const order = req.body;
 
@@ -69,7 +72,7 @@ app.post("/order-create", async (req, res) => {
       return;
     }
 
-    // 3️⃣ Retry logic (race condition fix)
+    // 3️⃣ Retry logic (race-condition fix)
     for (let attempt = 1; attempt <= 3; attempt++) {
       console.log(`⏳ Attempt ${attempt}/3 → waiting 20s`);
       await delay(20000);
@@ -111,7 +114,7 @@ app.post("/order-create", async (req, res) => {
         return;
       }
 
-      // 6️⃣ Send account invite
+      // 6️⃣ Send Shopify account invite
       const inviteRes = await shopifyFetch({
         query: `
           mutation ($customerId: ID!) {
@@ -145,12 +148,12 @@ app.post("/order-create", async (req, res) => {
   }
 });
 
-// --------------------
-// Health Check
-// --------------------
+// =====================
+// HEALTH CHECK
+// =====================
 app.get("/order-create", (req, res) => res.status(200).send("OK"));
 
-// --------------------
+// =====================
 app.listen(process.env.PORT || 3000, () => {
   console.log("🚀 Server running");
 });
